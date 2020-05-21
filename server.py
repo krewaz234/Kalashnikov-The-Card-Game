@@ -72,6 +72,8 @@ class Session(object):
         # print("(debug) connected:", self.player1_address)
         # self.player2_connection, self.player2_address = self.sock.accept()
         # print("(debug) connected: ", self.player2_address)
+        self.isplayer1_connected = True
+        self.isplayer2_connected = False
         self.player1_cards = []
         self.player2_cards = []
         self.deck = generateDeck()
@@ -87,8 +89,8 @@ class Session(object):
         self.discard_pile2 = []
         self.shelf = []
         self.turn = 1
-        self.isshooting1 = False
-        self.isshooting2 = False
+        self.isplayer1_shooting = False
+        self.isplayer2_shooting = False
         self.player1_points = 0
         self.player2_points = 0
 
@@ -97,14 +99,14 @@ class Session(object):
             self.discard_pile1.append(self.player1_cards[card_id])
             del self.player1_cards[card_id]
             self.player1_cards.append(self.deck[0])
-            self.player1_cards = sortCardsInArm(player1_cards)
+            self.player1_cards = sortCardsInArm(self.player1_cards)
         else:
             self.discard_pile2.append(self.player2_cards[card_id])
             del self.player2_cards[card_id]
             self.player2_cards.append(self.deck[0])
-            self.player2_cards = sortCardsInArm(player2_cards)
+            self.player2_cards = sortCardsInArm(self.player2_cards)
         del self.deck[0]
-
+    
 SESSIONS = {}
 
 # sock = socket.socket()
@@ -138,5 +140,8 @@ while True:
         if lreq[0] == "DELETE":
             sID = lreq[1]
             del SESSIONS[sID]
+
+        if lreq[0] == "DISCARD":
+            SESSIONS[lreq[1]].discardACard(int(lreq[2]), int(lreq[3]))
     
     req_con.close()
