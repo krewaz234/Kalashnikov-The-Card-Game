@@ -1,5 +1,7 @@
 import pygame
 from pygame.sprite import Sprite
+import socket
+import time
 
 class LogoSprite(Sprite):
     def __init__(self, logodir):
@@ -38,6 +40,16 @@ win_bgcolor, text_color = text_color, win_bgcolor
 card = Card("queen", "hearts")
 logo = LogoSprite("logo_dark_theme.png")
 
+def send_request(req):
+    SERVER_IP = '192.168.0.101'
+    REQ_SERVER_PORT = 1024
+    sock = socket.socket()
+    sock.connect((SERVER_IP, REQ_SERVER_PORT))
+    sock.send(bytes(req, encoding='utf-8'))
+    respond = sock.recv(1024)
+    sock.close()
+    return str(respond)[2:-1]
+
 def main_menu():
     global win
     while True:
@@ -59,7 +71,7 @@ def main_menu():
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
             if click:
-                lobbies()
+                select_search()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 - 100))
         ###########################################################################################################
 
@@ -81,29 +93,172 @@ def main_menu():
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
             if click:
-                pygame.quit()
+                return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 + 100))
         ################################################################################################################
 
         pygame.display.update()
         clock.tick(FPS)
 
-def lobbies():
+def select_search():
     global win
-    font_title = pygame.font.Font("Bevan.ttf", 56)
-    font_text = pygame.font.Font("Bevan.ttf", 28)
+    font = pygame.font.Font("Bevan.ttf", 56)
+
     while True:
         win.fill(win_bgcolor)
-        textsprite = font_title.render("Find a game", 1, text_color)
-        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, 50))
+        click = False
+
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return
             if event.type == pygame.QUIT:
                 pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+
+        textsprite = font.render("Find a game", 1, text_color)
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, 50))
+        #FIND A RANDOM GAME
+        textsprite = font.render("Find a random player", 1, text_color)
+        textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 - 100, textsprite.get_width(), textsprite.get_height())
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                random_player_search()
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 - 100))
+        ###############################################################################################################
+        
+        #PLAY WITH FRIEND
+        textsprite = font.render("Play with friend", 1, text_color)
+        textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2, textsprite.get_width(), textsprite.get_height())
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                play_with_friend()
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2))
+        ###############################################################################################################
+        #BACK BUTTON
+        textsprite = font.render("Back", 1, text_color)
+        textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200, textsprite.get_width(), textsprite.get_height())
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                return
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
+        ###############################################################################################################
+
         pygame.display.update()
         clock.tick(FPS)
+
+def random_player_search():
+    pass
+
+def play_with_friend():
+    font = pygame.font.Font("Bevan.ttf", 56)
+    while True:
+        win.fill(win_bgcolor)
+
+        click = False
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+        
+        #PLAY WITH FRIEND
+        textsprite = font.render("Play with friend", 1, text_color)
+        win.blit(textsprite, (((win_info.current_w - textsprite.get_width()) // 2, 50)))
+        ###########################################################################################################
+
+        margin_from_center_x = 300
+        #HOST THE GAME BUTTON
+        textsprite = font.render("Host the game", 1, text_color)
+        textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2 - margin_from_center_x, win_info.current_h // 2, textsprite.get_width(), textsprite.get_height())
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                host_the_game()
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 - margin_from_center_x, win_info.current_h // 2))
+        ####################################################################################################################
+        
+        #JOIN THE GAME BUTTON
+        textsprite = font.render("Join the game", 1, text_color)
+        textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2 + margin_from_center_x, win_info.current_h // 2, textsprite.get_width(), textsprite.get_height())
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                join_the_game()
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 + margin_from_center_x, win_info.current_h // 2))
+        ###############################################################################################################
+
+        #BACK BUTTON
+        textsprite = font.render("Back", 1, (text_color))
+        textsprite_rect = pygame.Rect(((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 300, textsprite.get_width(), textsprite.get_height()))
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                return
+
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 300))
+        ###################################################################################################################
+        pygame.display.update()
+        clock.tick(FPS)
+
+def host_the_game():
+    session_id = send_request("CREATE")
+    font = pygame.font.Font("Bevan.ttf", 56)
+    while True:
+        win.fill(win_bgcolor)
+
+        click = False
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    send_request("DELETE " + session_id)
+                    return
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+
+        #LOBBY ID TEXT
+        textsprite = font.render("Lobby ID: " + session_id, 1, text_color)
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, (win_info.current_h - textsprite.get_height()) // 2 + 75//2))
+        #################################################################################################################################
+
+        textsprite = font.render("Waiting for your friend to join...", 1, text_color)
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, (win_info.current_h - textsprite.get_height()) // 2 - 75//2))
+
+        #BACK BUTTON
+        textsprite = font.render("Back", 1, (text_color))
+        textsprite_rect = pygame.Rect(((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200, textsprite.get_width(), textsprite.get_height()))
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if click:
+                send_request("DELETE " + session_id)
+                return
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
+        ###########################################################################################################################################
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+
+def join_the_game():
+    pass
 
 def options():
     global win
@@ -159,7 +314,7 @@ def options():
         ####################################################################################################################
         
         #SOUND ON/OFF LABEL
-        textsprite = font.render("Sound:", 1, text_color)
+        textsprite = font.render("Sounds:", 1, text_color)
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 - 250, win_info.current_h // 2 - 100, textsprite.get_width(), textsprite.get_height()))
         ###################################################################################################################
         
@@ -219,6 +374,7 @@ def options():
         clock.tick(FPS)
 
 main_menu()
+pygame.quit()
 
 # while run:
 
