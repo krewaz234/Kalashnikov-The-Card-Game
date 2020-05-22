@@ -2,6 +2,7 @@ import socket
 import time
 import random
 
+SERVER_IP = '192.168.0.102'
 SERVER_PORT = 9090
 ID_OFFSET = 45632
 
@@ -49,12 +50,12 @@ def sortCardsInArm(cards):
     new_cards = []
     useful_cards_ind = []
 
-    for i in range(4):
+    for i in range(len(cards)):
         if cards[i].rank in ranks:
             new_cards.append(cards[i])
             useful_cards_ind.append(i)
 
-    for i in range(4):
+    for i in range(len(cards)):
         if not i in useful_cards_ind:
             new_cards.append(cards[i])
 
@@ -64,6 +65,9 @@ class Card(object):
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
+
+    def to_string(self):
+        return self.rank + "_" + self.suit
 
 class Session(object):
     def __init__(self):
@@ -80,10 +84,8 @@ class Session(object):
 
         #dealing the cards
         for i in range(4):
-            self.player1_cards.append(self.deck[0])
-            del self.deck[0]
-            self.player2_cards.append(self.deck[0])
-            del self.deck[0]
+            self.player1_cards.append(self.deck.pop(0))
+            self.player2_cards.append(self.deck.pop(0))
 
         self.discard_pile1 = []
         self.discard_pile2 = []
@@ -96,16 +98,24 @@ class Session(object):
 
     def discardACard(self, player, card_id):
         if player == 1:
-            self.discard_pile1.append(self.player1_cards[card_id])
-            del self.player1_cards[card_id]
-            self.player1_cards.append(self.deck[0])
+            self.discard_pile1.append(self.player1_cards.pop(card_id))
+            self.player1_cards.append(self.deck.pop(0))
             self.player1_cards = sortCardsInArm(self.player1_cards)
         else:
-            self.discard_pile2.append(self.player2_cards[card_id])
-            del self.player2_cards[card_id]
-            self.player2_cards.append(self.deck[0])
+            self.discard_pile2.append(self.player2_cards.pop(card_id))
+            self.player2_cards.append(self.deck.pop(0))
             self.player2_cards = sortCardsInArm(self.player2_cards)
-        del self.deck[0]
+
+    def getCards(self, player):
+        cards_str = ''
+        if player == 1:
+            for i in self.player1_cards:
+                cards_str += i.to_string() + ' '
+            return cards_str[:-1]
+        
+        for i in self.player2_cards:
+            cards_str += i.to_string() + ' '
+        return cards_str[:-1]
     
 SESSIONS = {}
 
@@ -123,7 +133,7 @@ SESSIONS = {}
 # connection.close()
 
 req_sock = socket.socket()
-req_sock.bind(('192.168.0.101', 1024))
+req_sock.bind((SERVER_IP, 1024))
 while True:
     req_sock.listen(1)
     req_con, req_addr = req_sock.accept()
@@ -139,9 +149,41 @@ while True:
             
         if lreq[0] == "DELETE":
             sID = lreq[1]
-            del SESSIONS[sID]
+            if sID in SESSIONS.keys():
+                del SESSIONS[sID]
+                req_con.send(bytes(str(1), encoding='utf-8'))
+            else:
+                req_con.send(bytes(str(0), encoding='utf-8'))
 
         if lreq[0] == "DISCARD":
             SESSIONS[lreq[1]].discardACard(int(lreq[2]), int(lreq[3]))
-    
+
+        if lreq[0] == "GET":
+            if lreq[1] == "CARDS":
+                req_con.send(bytes(SESSIONS[lreq[2]].getCards(int(lreq[3])), encoding='utf-8'))
+
+            if lreq[1] == "CONNECTION":
+                if lreq[3] == '1':
+                    if SESSIONS[lreq[2]].isplayer1_connected == True:
+                        req_con.send(bytes(1))
+                    else:
+                        req_con.send(bytes(0))
+                else:
+                    if SESSIONS[lreq[2]].isplayer2_connected == True:
+                        req_con.send(bytes(1))
+                    else:
+                        req_con.send(bytes(0))
+
+        if lreq[0] == "CONNECT":
+            if lreq[2] == '1':
+                SESSIONS[lreq[1]].isplayer1_connected = True
+            else:
+                SESSIONS[lreq[1]].isplayer2_connected = True
+        
+        if lreq[0] == "DISCONNECT":
+            if lreq[2] == '1':
+                SESSIONS[lreq[1]].isplayer1_connected = False
+            else:
+                SESSIONS[lreq[1]].isplayer2_connected = False
+                
     req_con.close()
