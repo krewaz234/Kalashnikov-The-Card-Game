@@ -20,13 +20,27 @@ FPS = 60
 CARD_W = 318
 CARD_H = 450
 pygame.init()
+fullscreen_mode = "ON"
+sound_mode = "ON"
+dark_mode = "ON"
+
+options_file = open("options.txt", 'r')
+for line in options_file:
+    param = line[:line.find('=')]
+    value = line[line.find('=') + 1:-1]
+    if param == "FULLSCREEN":
+        fullscreen_mode = value
+    if param == "SOUND":
+        sound_mode = value
+options_file.close()
+
 win = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 win_info = pygame.display.Info()
 FULLSCREEN_W = win_info.current_w
 FULLSCREEN_H = win_info.current_h
-fullscreen_mode = "ON"
-sound_mode = "ON"
-dark_mode = "ON"
+if fullscreen_mode == "OFF":
+    win = pygame.display.set_mode((1280, 720))
+win_info = pygame.display.Info()
 
 pygame.display.set_caption("Kalashnikov the Card Game")
 
@@ -131,7 +145,7 @@ def select_search():
         ###############################################################################################################
         
         #PLAY WITH FRIEND
-        textsprite = font.render("Play with friend", 1, text_color)
+        textsprite = font.render("Play with comrade", 1, text_color)
         textsprite_rect = pygame.Rect((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2, textsprite.get_width(), textsprite.get_height())
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
@@ -174,7 +188,7 @@ def play_with_friend():
                 click = True
         
         #PLAY WITH FRIEND
-        textsprite = font.render("Play with friend", 1, text_color)
+        textsprite = font.render("Play with comrade", 1, text_color)
         win.blit(textsprite, (((win_info.current_w - textsprite.get_width()) // 2, 50)))
         ###########################################################################################################
 
@@ -301,14 +315,25 @@ def options():
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
             if click:
+                lfile = []
+                f = open("options.txt", "r")
+                for line in f:
+                    lfile.append(line[:-1])
                 if fullscreen_mode == "ON":
+                    lfile[0] = "FULLSCREEN=OFF"
                     fullscreen_mode = "OFF"
                     win = pygame.display.set_mode((1280, 720))
                     win_info = pygame.display.Info()
                 else:
+                    lfile[0] = "FULLSCREEN=ON"
                     fullscreen_mode = "ON"
                     win = pygame.display.set_mode((FULLSCREEN_W, FULLSCREEN_H), pygame.FULLSCREEN)
                     win_info = pygame.display.Info()
+                f.close()
+                f = open("options.txt", "w")
+                for i in lfile:
+                    f.write(i + '\n')
+                f.close()
 
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 + 250, win_info.current_h // 2 - 200))
         ####################################################################################################################
@@ -325,10 +350,21 @@ def options():
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
             if click:
+                lfile = []
+                f = open("options.txt", "r")
+                for line in f:
+                    lfile.append(line[:-1])
                 if sound_mode == "ON":
+                    lfile[1] = "SOUND=OFF"
                     sound_mode = "OFF"
                 else:
+                    lfile[1] = "SOUND=ON"
                     sound_mode = "ON"
+                f.close()
+                f = open("options.txt", "w")
+                for i in lfile:
+                    f.write(i + '\n')
+                f.close()
 
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 + 250, win_info.current_h // 2 - 100))
         ####################################################################################################################
