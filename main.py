@@ -16,13 +16,17 @@ class Card(Sprite):
         self.pos_x = 0
         self.pos_y = 0
 
-FPS = 60
+FPS = 144
 CARD_W = 318
 CARD_H = 450
 pygame.init()
 fullscreen_mode = "ON"
 sound_mode = "ON"
 dark_mode = "ON"
+cursor_light_dir = "cursor_light.png"
+cursor_dark_dir = "cursor_dark.png"
+cursor_pointer_dark_dir = "cursor_pointer.png"
+cursor_pointer_light_dir = "cursor_pointer_light.png"
 
 options_file = open("options.txt", 'r')
 for line in options_file:
@@ -42,6 +46,20 @@ if fullscreen_mode == "OFF":
     win = pygame.display.set_mode((1280, 720))
 win_info = pygame.display.Info()
 
+cursor_dark             = pygame.image.load(cursor_dark_dir).convert_alpha()
+cursor_light            = pygame.image.load(cursor_light_dir).convert_alpha()
+cursor_pointer_dark     = pygame.image.load(cursor_pointer_dark_dir).convert_alpha()
+cursor_pointer_light    = pygame.image.load(cursor_pointer_light_dir).convert_alpha()
+
+cursor_dark = pygame.transform.scale(cursor_dark, (cursor_dark.get_width() // 5, cursor_dark.get_height() // 5))
+cursor_light = pygame.transform.scale(cursor_light, (cursor_light.get_width() // 5, cursor_light.get_height() // 5))
+cursor_pointer_dark = pygame.transform.scale(cursor_pointer_dark, (cursor_pointer_dark.get_width() // 4, cursor_pointer_dark.get_height() // 4))
+cursor_pointer_light = pygame.transform.scale(cursor_pointer_light, (cursor_pointer_light.get_width() // 5, cursor_pointer_light.get_height() // 5))
+
+pygame.mouse.set_visible(False)
+
+current_cursor = cursor_dark
+
 pygame.display.set_caption("Kalashnikov the Card Game")
 
 clock = pygame.time.Clock()
@@ -54,8 +72,11 @@ win_bgcolor, text_color = text_color, win_bgcolor
 card = Card("queen", "hearts")
 logo = LogoSprite("logo_dark_theme.png")
 
+def draw_cursor(cur):
+    win.blit(cur, pygame.mouse.get_pos())
+
 def send_request(req):
-    SERVER_IP = '192.168.0.101'
+    SERVER_IP = '192.168.50.19'
     REQ_SERVER_PORT = 1024
     sock = socket.socket()
     sock.connect((SERVER_IP, REQ_SERVER_PORT))
@@ -66,8 +87,13 @@ def send_request(req):
 
 def main_menu():
     global win
+    global current_cursor
     while True:
         click = False
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
         win.fill(win_bgcolor)
 
         win.blit(logo.image, (win_info.current_w // 2 - logo.image.get_width() // 2, 50))
@@ -84,6 +110,10 @@ def main_menu():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 select_search()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 - 100))
@@ -95,6 +125,10 @@ def main_menu():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 options()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2))
@@ -106,11 +140,16 @@ def main_menu():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 + 100))
         ################################################################################################################
 
+        draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -120,6 +159,10 @@ def select_search():
 
     while True:
         win.fill(win_bgcolor)
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
         click = False
 
         for event in pygame.event.get():
@@ -139,6 +182,10 @@ def select_search():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 random_player_search()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 - 100))
@@ -150,6 +197,10 @@ def select_search():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 play_with_friend()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2))
@@ -160,11 +211,15 @@ def select_search():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
         ###############################################################################################################
-
+        draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -175,6 +230,10 @@ def play_with_friend():
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
         win.fill(win_bgcolor)
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
 
         click = False
         for event in pygame.event.get():
@@ -199,8 +258,13 @@ def play_with_friend():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 host_the_game()
+    
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 - margin_from_center_x, win_info.current_h // 2))
         ####################################################################################################################
         
@@ -210,6 +274,10 @@ def play_with_friend():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 join_the_game()
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 + margin_from_center_x, win_info.current_h // 2))
@@ -221,11 +289,17 @@ def play_with_friend():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 return
 
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 300))
         ###################################################################################################################
+
+        draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -234,6 +308,10 @@ def host_the_game():
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
         win.fill(win_bgcolor)
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
 
         click = False
         for event in pygame.event.get():
@@ -261,12 +339,17 @@ def host_the_game():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 send_request("DELETE " + session_id)
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
         ###########################################################################################################################################
 
+        draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -283,6 +366,7 @@ def options():
     global dark_mode
     global text_color
     global win_bgcolor
+    global current_cursor
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
         click = False
@@ -297,6 +381,10 @@ def options():
                 click = True
 
         win.fill(win_bgcolor)
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
         
         #WE ARE IN OPTIONS
         textsprite = font.render("Options", 1, text_color)
@@ -314,6 +402,10 @@ def options():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 lfile = []
                 f = open("options.txt", "r")
@@ -349,6 +441,10 @@ def options():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 lfile = []
                 f = open("options.txt", "r")
@@ -381,16 +477,22 @@ def options():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 if dark_mode == "ON":
                     dark_mode = "OFF"
                     logo = LogoSprite("logo.png")
                     text_color, win_bgcolor = win_bgcolor, text_color
+                    current_cursor = cursor_light
                     
                 else:
                     dark_mode = "ON"
                     logo = LogoSprite("logo_dark_theme.png")
                     text_color, win_bgcolor = win_bgcolor, text_color
+                    current_cursor = cursor_dark
 
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2 + 250, win_info.current_h // 2))
         ##################################################################################################################
@@ -401,11 +503,17 @@ def options():
         if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
             button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
             pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
             if click:
                 return
 
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
         ###################################################################################################################
+
+        draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
 
