@@ -2,6 +2,7 @@ import pygame
 from pygame.sprite import Sprite
 import socket
 import time
+import threading
 
 class LogoSprite(Sprite):
     def __init__(self, logodir):
@@ -19,6 +20,7 @@ class Card(Sprite):
 FPS = 144
 CARD_W = 318
 CARD_H = 450
+respond = "" #respond to the last made request to database
 pygame.init()
 fullscreen_mode = "ON"
 sound_mode = "ON"
@@ -76,18 +78,37 @@ def draw_cursor(cur):
     win.blit(cur, pygame.mouse.get_pos())
 
 def send_request(req):
+    global respond
     SERVER_IP = '192.168.50.19'
     REQ_SERVER_PORT = 1024
     sock = socket.socket()
-    sock.connect((SERVER_IP, REQ_SERVER_PORT))
+    try:
+        sock.connect((SERVER_IP, REQ_SERVER_PORT))
+    except ConnectionRefusedError:
+        respond = "ERROR"
+        print("Theres an error")
+        return
+        
     sock.send(bytes(req, encoding='utf-8'))
-    respond = sock.recv(1024)
+    try:
+        respond = sock.recv(1024)
+    except Exception:
+        respond = "ERROR"
+        return
     sock.close()
-    return str(respond)[2:-1]
+    respond = str(respond)[2:-1]
+
+def pr():
+    for i in range(5):
+        print(i)
+        time.sleep(.5)
 
 def main_menu():
+    time.sleep(.3)
     global win
     global current_cursor
+    pr1 = threading.Thread(target=pr)
+    pr1.start()
     while True:
         click = False
         if dark_mode == "ON":
@@ -145,6 +166,7 @@ def main_menu():
             else:
                 current_cursor = cursor_pointer_light
             if click:
+                pr1.join()
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 + 100))
         ################################################################################################################
@@ -152,8 +174,10 @@ def main_menu():
         draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
+    pr1.join()
 
 def select_search():
+    time.sleep(.3)
     global win
     font = pygame.font.Font("Bevan.ttf", 56)
 
@@ -227,6 +251,7 @@ def random_player_search():
     pass
 
 def play_with_friend():
+    time.sleep(.3)
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
         win.fill(win_bgcolor)
@@ -304,29 +329,51 @@ def play_with_friend():
         clock.tick(FPS)
 
 def host_the_game():
-    session_id = send_request("CREATE")
+    time.sleep(.3)
+    global respond
+    netThread = threading.Thread(target=send_request, args=("CREATE",))
+    netThread.start()
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
-        win.fill(win_bgcolor)
-        if dark_mode == "ON":
-            current_cursor = cursor_dark
-        else:
-            current_cursor = cursor_light
-
         click = False
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    send_request("DELETE " + session_id)
+                    if respond != "ERROR" and respond != "":
+                        send_request("DELETE " + respond)
+                    respond = ""
+                    netThread.join()
                     return
             if event.type == pygame.QUIT:
+                netThread.join()
                 pygame.quit()
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click = True
 
+        win.fill(win_bgcolor)
+
+        if dark_mode == "ON":
+            current_cursor = cursor_dark
+        else:
+            current_cursor = cursor_light
+
+        if respond == "":
+            draw_cursor(current_cursor)
+            pygame.display.update()
+            clock.tick(FPS)
+            continue
+
+        if respond == "ERROR":
+            textsprite = font.render("An error occured. Try again later", 1, text_color)
+            win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, (win_info.current_h - textsprite.get_height()) // 2))
+            draw_cursor(current_cursor)
+            pygame.display.update()
+            clock.tick(FPS)
+            continue
+
         #LOBBY ID TEXT
-        textsprite = font.render("Lobby ID: " + session_id, 1, text_color)
+        textsprite = font.render("Lobby ID: " + respond, 1, text_color)
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, (win_info.current_h - textsprite.get_height()) // 2 + 75//2))
         #################################################################################################################################
 
@@ -344,7 +391,9 @@ def host_the_game():
             else:
                 current_cursor = cursor_pointer_light
             if click:
-                send_request("DELETE " + session_id)
+                send_request("DELETE " + respond)
+                netThread.join()
+                respond = ""
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
         ###########################################################################################################################################
@@ -358,6 +407,7 @@ def join_the_game():
     pass
 
 def options():
+    time.sleep(.3)
     global win
     global win_info
     global fullscreen_mode
