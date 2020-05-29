@@ -29,6 +29,8 @@ cursor_light_dir = "cursor_light.png"
 cursor_dark_dir = "cursor_dark.png"
 cursor_pointer_dark_dir = "cursor_pointer.png"
 cursor_pointer_light_dir = "cursor_pointer_light.png"
+spinner_dark_theme_dir = "spinner.png"
+spinner_light_theme_dir = "spinner_light_theme.png"
 
 options_file = open("options.txt", 'r')
 for line in options_file:
@@ -48,6 +50,7 @@ if fullscreen_mode == "OFF":
     win = pygame.display.set_mode((1280, 720))
 win_info = pygame.display.Info()
 
+#cursors setup
 cursor_dark             = pygame.image.load(cursor_dark_dir).convert_alpha()
 cursor_light            = pygame.image.load(cursor_light_dir).convert_alpha()
 cursor_pointer_dark     = pygame.image.load(cursor_pointer_dark_dir).convert_alpha()
@@ -57,6 +60,13 @@ cursor_dark = pygame.transform.scale(cursor_dark, (cursor_dark.get_width() // 5,
 cursor_light = pygame.transform.scale(cursor_light, (cursor_light.get_width() // 5, cursor_light.get_height() // 5))
 cursor_pointer_dark = pygame.transform.scale(cursor_pointer_dark, (cursor_pointer_dark.get_width() // 4, cursor_pointer_dark.get_height() // 4))
 cursor_pointer_light = pygame.transform.scale(cursor_pointer_light, (cursor_pointer_light.get_width() // 5, cursor_pointer_light.get_height() // 5))
+
+#spinners setup
+spinner_dark_theme = pygame.image.load(spinner_dark_theme_dir).convert_alpha()
+spinner_light_theme = pygame.image.load(spinner_light_theme_dir).convert_alpha()
+
+spinner_light_theme = pygame.transform.scale(spinner_light_theme, (spinner_light_theme.get_width() // 5, spinner_light_theme.get_height() // 5))
+spinner_dark_theme = pygame.transform.scale(spinner_dark_theme, (spinner_dark_theme.get_width() // 5, spinner_dark_theme.get_height() // 5))
 
 pygame.mouse.set_visible(False)
 
@@ -76,6 +86,13 @@ logo = LogoSprite("logo_dark_theme.png")
 
 def draw_cursor(cur):
     win.blit(cur, pygame.mouse.get_pos())
+
+def blitRotateCenter(surf, image, topleft, angle):
+    rotated_image = pygame.transform.rotate(image, angle)
+    new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
+    surf.blit(rotated_image, new_rect.topleft)
+
+    return rotated_image, new_rect
 
 def send_request(req):
     global respond
@@ -98,23 +115,13 @@ def send_request(req):
     sock.close()
     respond = str(respond)[2:-1]
 
-def pr():
-    for i in range(5):
-        print(i)
-        time.sleep(.5)
-
 def main_menu():
-    time.sleep(.3)
+    
     global win
     global current_cursor
-    pr1 = threading.Thread(target=pr)
-    pr1.start()
     while True:
         click = False
-        if dark_mode == "ON":
-            current_cursor = cursor_dark
-        else:
-            current_cursor = cursor_light
+        current_cursor = cursor_dark if dark_mode == "ON" else cursor_light
         win.fill(win_bgcolor)
 
         win.blit(logo.image, (win_info.current_w // 2 - logo.image.get_width() // 2, 50))
@@ -166,7 +173,6 @@ def main_menu():
             else:
                 current_cursor = cursor_pointer_light
             if click:
-                pr1.join()
                 return
         win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h // 2 + 100))
         ################################################################################################################
@@ -174,10 +180,9 @@ def main_menu():
         draw_cursor(current_cursor)
         pygame.display.update()
         clock.tick(FPS)
-    pr1.join()
 
 def select_search():
-    time.sleep(.3)
+    
     global win
     font = pygame.font.Font("Bevan.ttf", 56)
 
@@ -251,14 +256,11 @@ def random_player_search():
     pass
 
 def play_with_friend():
-    time.sleep(.3)
+    
     font = pygame.font.Font("Bevan.ttf", 56)
     while True:
         win.fill(win_bgcolor)
-        if dark_mode == "ON":
-            current_cursor = cursor_dark
-        else:
-            current_cursor = cursor_light
+        current_cursor = cursor_dark if dark_mode == "ON" else cursor_light
 
         click = False
         for event in pygame.event.get():
@@ -329,11 +331,14 @@ def play_with_friend():
         clock.tick(FPS)
 
 def host_the_game():
-    time.sleep(.3)
+    
     global respond
+    global spinner_dark_theme
+    global spinner_light_theme
     netThread = threading.Thread(target=send_request, args=("CREATE",))
     netThread.start()
     font = pygame.font.Font("Bevan.ttf", 56)
+    spinner_rotation_degree = 0
     while True:
         click = False
         for event in pygame.event.get():
@@ -353,12 +358,17 @@ def host_the_game():
 
         win.fill(win_bgcolor)
 
-        if dark_mode == "ON":
-            current_cursor = cursor_dark
-        else:
-            current_cursor = cursor_light
+        current_cursor = cursor_dark if dark_mode == "ON" else cursor_light
 
         if respond == "":
+            rot = rect = None
+            if dark_mode == "ON":
+                blitRotateCenter(win, spinner_dark_theme, ((win_info.current_w - spinner_dark_theme.get_width()) // 2, (win_info.current_h - spinner_dark_theme.get_height()) // 2), spinner_rotation_degree)
+            else:
+                blitRotateCenter(win, spinner_light_theme, ((win_info.current_w - spinner_light_theme.get_width()) // 2, (win_info.current_h - spinner_light_theme.get_height()) // 2), spinner_rotation_degree)
+            spinner_rotation_degree -= 3
+            if spinner_rotation_degree <= -360:
+                spinner_rotation_degree += 360
             draw_cursor(current_cursor)
             pygame.display.update()
             clock.tick(FPS)
@@ -404,10 +414,60 @@ def host_the_game():
 
 
 def join_the_game():
-    pass
+    font = pygame.font.Font("Bevan.ttf", 56)
+    smfont = pygame.font.Font("Bevan.ttf", 32)
+    ib_text = ""
+    allowed_symbols = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789"
+    input_active = False
+    while True:
+        click = False
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+
+                elif event.key == pygame.K_BACKSPACE:
+                    ib_text = ib_text[:-1]
+                else:
+                    if len(ib_text) < 4 and event.unicode in allowed_symbols:
+                        ib_text += event.unicode
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        win.fill(win_bgcolor)
+
+        current_cursor = cursor_dark if dark_mode == "ON" else cursor_light
+        
+        #JOIN THE GAME
+        textsprite = font.render("Join the game", 1, text_color)
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, 100))
+        #################################################################################
+
+        #ID LABEL
+        textsprite1 = font.render("Your friend's lobby ID: " + ib_text, 1, text_color)
+        win.blit(textsprite1, ((win_info.current_w - textsprite1.get_width()) // 2, (win_info.current_h - textsprite1.get_height()) // 2))
+        #BACK BUTTON
+        textsprite = font.render("Back", 1, (text_color))
+        textsprite_rect = pygame.Rect(((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200, textsprite.get_width(), textsprite.get_height()))
+        if textsprite_rect.collidepoint(pygame.mouse.get_pos()):
+            button_bgcolor = (win_bgcolor[0] - 30, win_bgcolor[1] - 30, win_bgcolor[2] - 30)
+            pygame.draw.rect(win, button_bgcolor, textsprite_rect)
+            if current_cursor == cursor_dark:
+                current_cursor = cursor_pointer_dark
+            else:
+                current_cursor = cursor_pointer_light
+            if click:
+                return
+        win.blit(textsprite, ((win_info.current_w - textsprite.get_width()) // 2, win_info.current_h - 200))
+        ###########################################################################################################################################
+        draw_cursor(current_cursor)
+        pygame.display.update()
+        clock.tick(FPS)
 
 def options():
-    time.sleep(.3)
+    
     global win
     global win_info
     global fullscreen_mode
@@ -569,19 +629,3 @@ def options():
 
 main_menu()
 pygame.quit()
-
-# while run:
-
-#     win.fill(win_bgcolor)
-#     if current_menu == "main_menu":
-#         win.blit(logo.image, (win_info.current_w // 2 - 492 // 2, 50))
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             run = False
-
-#     if pygame.mouse.get_pressed()[0]:
-#         card.pos = pygame.mouse.get_pos()
-#         card.pos_x = pygame.mouse.get_pos()[0] - CARD_W // 2
-#         card.pos_y = pygame.mouse.get_pos()[1] - CARD_H // 2
-#     win.blit(card.image, (card.pos_x, card.pos_y))
-# pygame.quit()
