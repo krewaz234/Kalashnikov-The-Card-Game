@@ -17,7 +17,7 @@ class Card(Sprite):
         self.pos_x = 0
         self.pos_y = 0
 
-FPS = 144
+FPS = 144 #TRUE GAMER MLG EXPERIENCE
 CARD_W = 318
 CARD_H = 450
 respond = "" #respond to the last made request to database
